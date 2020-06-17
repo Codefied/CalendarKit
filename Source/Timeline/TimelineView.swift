@@ -425,15 +425,24 @@ public final class TimelineView: UIView {
     overlappingEvents.removeAll()
 
     for overlappingEvents in groupsOfEvents {
-      let totalCount = CGFloat(overlappingEvents.count)
-      for (index, event) in overlappingEvents.enumerated() {
-        let startY = dateToY(event.descriptor.datePeriod.beginning!)
-        let endY = dateToY(event.descriptor.datePeriod.end!)
-        let floatIndex = CGFloat(index)
-        let x = style.leftInset + floatIndex / totalCount * calendarWidth
-        let equalWidth = calendarWidth / totalCount
-        event.frame = CGRect(x: x, y: startY, width: equalWidth, height: endY - startY)
-      }
+        var division = 1
+        for event in overlappingEvents {
+            let localDivision = overlappingEvents.filter({ !($0.descriptor === event.descriptor) && $0.descriptor.datePeriod.contains(event.descriptor.datePeriod.beginning!, interval: .closed) }).count + 1
+            division = max(division, localDivision)
+        }
+        
+        let totalCount = CGFloat(division)
+        for event in overlappingEvents {
+            let filteredEvents: Array<EventLayoutAttributes> = overlappingEvents.filter({event.descriptor.datePeriod.overlaps(with: $0.descriptor.datePeriod)})
+            let index = filteredEvents.firstIndex(where: { $0 === event })
+            
+            let startY = dateToY(event.descriptor.datePeriod.beginning!)
+            let endY = dateToY(event.descriptor.datePeriod.end!)
+            let floatIndex = CGFloat(index!)
+            let x = style.leftInset + floatIndex / totalCount * calendarWidth
+            let equalWidth = calendarWidth / totalCount
+            event.frame = CGRect(x: x, y: startY, width: equalWidth, height: endY - startY)
+        }
     }
   }
 
