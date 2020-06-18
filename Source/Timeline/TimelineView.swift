@@ -538,3 +538,13 @@ public final class TimelineView: UIView {
   }
 }
 #endif
+
+extension EventLayoutAttributes: Hashable {
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(ObjectIdentifier(self.descriptor))
+  }
+
+  public static func == (lhs: EventLayoutAttributes, rhs: EventLayoutAttributes) -> Bool {
+    return lhs.descriptor === rhs.descriptor
+  }
+}
