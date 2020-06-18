@@ -452,6 +452,10 @@ public final class TimelineView: UIView {
         }
     }
   }
+  
+  private func alreadySlotted(event: EventLayoutAttributes, slottedEvents: [EventLayoutAttributes:Int]) -> Bool {
+    return slottedEvents[event] != nil
+  }
 
   private func prepareEventViews() {
     pool.enqueue(views: eventViews)
