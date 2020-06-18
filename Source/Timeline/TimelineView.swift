@@ -424,7 +424,7 @@ public final class TimelineView: UIView {
     groupsOfEvents.append(overlappingEvents)
     overlappingEvents.removeAll()
 
-    var slottedEvents = [EventWithSlot]()
+    var slottedEvents = [EventLayoutAttributes:Int]()
 
     for overlappingEvents in groupsOfEvents {
         var division = 1
@@ -432,29 +432,22 @@ public final class TimelineView: UIView {
             let localDivision = overlappingEvents.filter({ !($0.descriptor === event.descriptor) && $0.descriptor.datePeriod.contains(event.descriptor.datePeriod.beginning!, interval: .closed) }).count
             division = max(division, localDivision)
         }
-        
-        let totalCount = CGFloat(division)
       
         for event in overlappingEvents {
-          let filteredEvents: Array<EventLayoutAttributes> = overlappingEvents.filter({event.descriptor.datePeriod.overlaps(with: $0.descriptor.datePeriod)})
-          let index = filteredEvents.firstIndex(where: { $0 === event })
-          
-          let takenSlots = slottedEvents.filter { slottedEvent in filteredEvents.contains(where: {$0 === slottedEvent.event }) }.map {$0.slot}
-          var firstAvailableSlot = index
-          for i in 0...division-1 {
-            if (!takenSlots.contains(i)) {
-              firstAvailableSlot = i
-              break;
-            }
+          if (alreadySlotted(event: event, slottedEvents: slottedEvents)) {
+            continue
           }
+          let eventOverlappingWithCurrentEvent: Array<EventLayoutAttributes> = overlappingEvents.filter({event.descriptor.datePeriod.overlaps(with: $0.descriptor.datePeriod)})
+          let takenSlots = slottedEvents.filter {eventOverlappingWithCurrentEvent.contains($0.key)}.values.sorted()
+          let firstAvailableSlot = Array(0...division-1).first(where: {!takenSlots.contains($0)}) ?? 0
+          slottedEvents[event] = firstAvailableSlot
           
-          slottedEvents.append(EventWithSlot(event: event, slot: firstAvailableSlot!))
-          
+          let totalCount = CGFloat(division)
           let startY = dateToY(event.descriptor.datePeriod.beginning!)
           let endY = dateToY(event.descriptor.datePeriod.end!)
-            let floatIndex = CGFloat(firstAvailableSlot!)
-            let x = style.leftInset + floatIndex / totalCount * calendarWidth
-            let equalWidth = calendarWidth / totalCount
+          let floatIndex = CGFloat(firstAvailableSlot)
+          let x = style.leftInset + floatIndex / totalCount * calendarWidth
+          let equalWidth = calendarWidth / totalCount
           event.frame = CGRect(x: x, y: startY, width: equalWidth, height: endY - startY)
         }
     }
@@ -541,8 +534,3 @@ public final class TimelineView: UIView {
   }
 }
 #endif
-
-public struct EventWithSlot {
-  public var event: EventLayoutAttributes
-  public var slot: Int
-}
