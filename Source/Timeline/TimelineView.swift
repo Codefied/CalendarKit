@@ -429,7 +429,9 @@ public final class TimelineView: UIView {
     for overlappingEvents in groupsOfEvents {
         var division = 1
         for event in overlappingEvents {
-            let localDivision = overlappingEvents.filter({ !($0.descriptor === event.descriptor) && $0.descriptor.datePeriod.contains(event.descriptor.datePeriod.beginning!, interval: .closed) }).count
+            let localDivision = overlappingEvents.filter({ ($0.descriptor.datePeriod.contains(event.descriptor.datePeriod.beginning!, interval: .open) ||
+              $0.descriptor.datePeriod.beginning == event.descriptor.datePeriod.beginning)
+            }).count
             division = max(division, localDivision)
         }
       
