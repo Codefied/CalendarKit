@@ -141,53 +141,50 @@ class CustomCalendarExampleController: DayViewController, DatePickerControllerDe
   
   // MARK: EventDataSource
   
-  override func eventsForDate(_ date: Date) -> [EventDescriptor] {
-    if !alreadyGeneratedSet.contains(date) {
-      alreadyGeneratedSet.insert(date)
-      generatedEvents.append(contentsOf: generateEventsForDate(date))
-    }
-    return generatedEvents
+   override func eventsForDate(_ date: Date) -> [EventDescriptor] {
+     var events = [Event]()
+    
+    events.append(event(startHour: 8, endHour: 16, name: "1"))
+    events.append(event(startHour: 8, startMinute: 30, endHour: 11, name: "2"))
+    events.append(event(startHour: 9, endHour: 10, name: "3"))
+    events.append(event(startHour: 10, endHour: 11, name: "4"))
+    events.append(event(startHour: 9, startMinute: 30, endHour: 10, endMinute: 30, name: "5"))
+    events.append(event(startHour: 10, startMinute: 30, endHour: 11, endMinute: 30, name: "6"))
+    events.append(event(startHour: 11, endHour: 12, name: "7"))
+    events.append(event(startHour: 12, endHour: 13, name: "8"))
+    events.append(event(startHour: 12, endHour: 13, name: "9"))
+    events.append(event(startHour: 12, startMinute: 30, endHour: 13, endMinute: 30, name: "10"))
+    events.append(event(startHour: 13, endHour: 14, name: "11"))
+    events.append(event(startHour: 13, endHour: 14, name: "12"))
+    events.append(event(startHour: 14, endHour: 15, name: "13"))
+    events.append(event(startHour: 14, endHour: 15, name: "14"))
+    events.append(event(startHour: 15, endHour: 16, name: "15"))
+    events.append(event(startHour: 15, endHour: 16, name: "16"))
+
+    events.append(event(startHour: 10, endHour: 11, name: "17"))
+    events.append(event(startHour: 15, endHour: 16, name: "18"))
+    events.append(event(startHour: 12, endHour: 13, name: "19"))
+    events.append(event(startHour: 13, endHour: 14, name: "20"))
+      return events
+   }
+  
+  private func event(startHour: Int, startMinute: Int = 0, endHour: Int, endMinute: Int = 0, name: String) -> Event {
+    let event = Event()
+    event.startDate = makeDate(hour: startHour, minute: startMinute)
+    event.endDate = makeDate(hour: endHour, minute: endMinute)
+    event.text = name
+    return event
   }
   
-  private func generateEventsForDate(_ date: Date) -> [EventDescriptor] {
-    var workingDate = date.add(TimeChunk.dateComponents(hours: Int(arc4random_uniform(10) + 5)))
-    var events = [Event]()
+  private func makeDate(hour: Int, minute: Int) -> Date {
+    var components = DateComponents()
+    components.day = 19
+    components.month = 6
+    components.year = 2020
+    components.hour = hour - 9
+    components.minute = minute
     
-    for i in 0...4 {
-      let event = Event()
-      let duration = Int(arc4random_uniform(160) + 60)
-      let datePeriod = TimePeriod(beginning: workingDate,
-                                  chunk: TimeChunk.dateComponents(minutes: duration))
-      
-      event.startDate = datePeriod.beginning!
-      event.endDate = datePeriod.end!
-      
-      var info = data[Int(arc4random_uniform(UInt32(data.count)))]
-      
-      let timezone = dayView.calendar.timeZone
-      print(timezone)
-      info.append(datePeriod.beginning!.format(with: "dd.MM.YYYY", timeZone: timezone))
-      info.append("\(datePeriod.beginning!.format(with: "HH:mm", timeZone: timezone)) - \(datePeriod.end!.format(with: "HH:mm", timeZone: timezone))")
-      event.text = info.reduce("", {$0 + $1 + "\n"})
-      event.color = colors[Int(arc4random_uniform(UInt32(colors.count)))]
-      event.isAllDay = Int(arc4random_uniform(2)) % 2 == 0
-      
-      // Event styles are updated independently from CalendarStyle
-      // hence the need to specify exact colors in case of Dark style
-      if currentStyle == .Dark {
-        event.textColor = textColorForEventInDarkTheme(baseColor: event.color)
-        event.backgroundColor = event.color.withAlphaComponent(0.6)
-      }
-      
-      events.append(event)
-      
-      let nextOffset = Int(arc4random_uniform(250) + 40)
-      workingDate = workingDate.add(TimeChunk.dateComponents(minutes: nextOffset))
-      event.userInfo = String(i)
-    }
-
-    print("Events for \(date)")
-    return events
+    return Calendar.current.date(from: components)!
   }
   
   private func textColorForEventInDarkTheme(baseColor: UIColor) -> UIColor {
