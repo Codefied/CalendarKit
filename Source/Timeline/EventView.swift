@@ -123,6 +123,8 @@ open class EventView: UIView {
       textFrame.size.height += frame.minY;
       textView.frame = textFrame;
     }
+    textView.textContainerInset = UIEdgeInsets.init(top: 2, left: 0, bottom: 2, right: 0)
+    
     let first = eventResizeHandles.first
     let last = eventResizeHandles.last
     let radius: CGFloat = 40
