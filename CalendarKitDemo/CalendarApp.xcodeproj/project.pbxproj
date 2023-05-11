@@ -24,6 +24,7 @@
 		7924836523CB7BFE003E3D27 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7924836623CB7BFE003E3D27 /* CustomCalendarExampleController.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = CustomCalendarExampleController.swift; sourceTree = "<group>"; tabWidth = 2; };
 		A223D8E39EB8C7A25F4E823A /* Pods_CalendarApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CalendarApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F585C9D32A0CDA90008B78E3 /* CalendarKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = CalendarKit; path = ..; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +42,7 @@
 		7924833723CB7B57003E3D27 = {
 			isa = PBXGroup;
 			children = (
+				F585C9D22A0CDA90008B78E3 /* Packages */,
 				7924834223CB7B57003E3D27 /* CalendarApp */,
 				7924834123CB7B57003E3D27 /* Products */,
 				D2B9A4777F5DB09BCFA26C1E /* Frameworks */,
@@ -74,6 +76,14 @@
 				A223D8E39EB8C7A25F4E823A /* Pods_CalendarApp.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		F585C9D22A0CDA90008B78E3 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				F585C9D32A0CDA90008B78E3 /* CalendarKit */,
+			);
+			name = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
