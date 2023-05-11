@@ -70,44 +70,60 @@ final class CustomCalendarExampleController: DayViewController {
   // MARK: EventDataSource
   
   override func eventsForDate(_ date: Date) -> [EventDescriptor] {
-    if !alreadyGeneratedSet.contains(date) {
-      alreadyGeneratedSet.insert(date)
-      generatedEvents.append(contentsOf: generateEventsForDate(date))
+      var events = [Event]()
+
+      events.append(event(startHour: 8, endHour: 16, name: "1"))
+      events.append(event(startHour: 8, startMinute: 30, endHour: 11, name: "2"))
+      events.append(event(startHour: 9, endHour: 10, name: "3"))
+      events.append(event(startHour: 10, endHour: 11, name: "4"))
+      events.append(event(startHour: 9, startMinute: 30, endHour: 10, endMinute: 30, name: "5"))
+      events.append(event(startHour: 10, startMinute: 30, endHour: 11, endMinute: 30, name: "6"))
+      events.append(event(startHour: 11, endHour: 12, name: "7"))
+      events.append(event(startHour: 12, endHour: 13, name: "8"))
+      events.append(event(startHour: 12, endHour: 13, name: "9"))
+      events.append(event(startHour: 12, startMinute: 30, endHour: 13, endMinute: 30, name: "10"))
+      events.append(event(startHour: 13, endHour: 14, name: "11"))
+      events.append(event(startHour: 13, endHour: 14, name: "12"))
+      events.append(event(startHour: 14, endHour: 15, name: "13"))
+      events.append(event(startHour: 14, endHour: 15, name: "14"))
+      events.append(event(startHour: 15, endHour: 16, name: "15"))
+      events.append(event(startHour: 15, endHour: 16, name: "16"))
+
+      events.append(event(startHour: 10, endHour: 11, name: "17"))
+      events.append(event(startHour: 15, endHour: 16, name: "18"))
+      events.append(event(startHour: 12, endHour: 13, name: "19"))
+      events.append(event(startHour: 13, endHour: 14, name: "20"))
+      return events
     }
-    return generatedEvents
-  }
-  
-  private func generateEventsForDate(_ date: Date) -> [EventDescriptor] {
-    var workingDate = Calendar.current.date(byAdding: .hour, value: Int.random(in: 1...15), to: date)!
-    var events = [Event]()
-    
-    for i in 0...4 {
+
+    private func event(startHour: Int, startMinute: Int = 0, endHour: Int, endMinute: Int = 0, name: String) -> Event {
       let event = Event()
-      
-      let duration = Int.random(in: 60 ... 160)
-      event.dateInterval = DateInterval(start: workingDate, duration: TimeInterval(duration * 60))
-      
-      var info = data.randomElement() ?? []
-      
-      let timezone = dayView.calendar.timeZone
-      print(timezone)
-      
-      info.append(dateIntervalFormatter.string(from: event.dateInterval.start, to: event.dateInterval.end))
-      event.text = info.reduce("", {$0 + $1 + "\n"})
-      event.color = colors.randomElement() ?? .red
-      event.isAllDay = Bool.random()
-      event.lineBreakMode = .byTruncatingTail
-      
-      events.append(event)
-      
-      let nextOffset = Int.random(in: 40 ... 250)
-      workingDate = Calendar.current.date(byAdding: .minute, value: nextOffset, to: workingDate)!
-      event.userInfo = String(i)
+      let startDate = makeDate(hour: startHour, minute: startMinute)
+      let endDate = makeDate(hour: endHour, minute: endMinute)
+      event.dateInterval = DateInterval(start: startDate, end: endDate)
+      event.text = name
+      return event
     }
-    
-    print("Events for \(date)")
-    return events
-  }
+
+    private func makeDate(hour: Int, minute: Int) -> Date {
+
+      let calendar = Calendar.current
+
+      let currentDateComponents = calendar.dateComponents(Set([.day, .month, .year]), from: Date())
+      var components = DateComponents()
+
+      if let day = currentDateComponents.day,
+         let month = currentDateComponents.month,
+         let year = currentDateComponents.year {
+        components.day = day
+        components.month = month
+        components.year = year
+        components.hour = hour
+        components.minute = minute
+      }
+
+      return Calendar.current.date(from: components)!
+    }
   
   // MARK: DayViewDelegate
   

@@ -434,66 +434,88 @@ public final class TimelineView: UIView {
 
     private func recalculateEventLayout() {
 
-        // only non allDay events need their frames to be set
-        let sortedEvents = self.regularLayoutAttributes.sorted { (attr1, attr2) -> Bool in
-            let start1 = attr1.descriptor.dateInterval.start
-            let start2 = attr2.descriptor.dateInterval.start
-            return start1 < start2
+      // only non allDay events need their frames to be set
+      let sortedEvents = self.regularLayoutAttributes.sorted { (attr1, attr2) -> Bool in
+          let start1 = attr1.descriptor.dateInterval.start
+          let start2 = attr2.descriptor.dateInterval.start
+          return start1 < start2
+      }
+
+      var groupsOfEvents = [[EventLayoutAttributes]]()
+      var overlappingEvents = [EventLayoutAttributes]()
+
+      for event in sortedEvents {
+          if overlappingEvents.isEmpty {
+              overlappingEvents.append(event)
+              continue
+          }
+
+          let longestEvent = overlappingEvents.sorted { (attr1, attr2) -> Bool in
+              var period = attr1.descriptor.dateInterval
+              let period1 = period.end.timeIntervalSince(period.start)
+              period = attr2.descriptor.dateInterval
+              let period2 = period.end.timeIntervalSince(period.start)
+
+              return period1 > period2
+          }
+              .first!
+
+          if style.eventsWillOverlap {
+              guard let earliestEvent = overlappingEvents.first?.descriptor.dateInterval.start else { continue }
+              let dateInterval = getDateInterval(date: earliestEvent)
+              if event.descriptor.dateInterval.contains(dateInterval.start) {
+                  overlappingEvents.append(event)
+                  continue
+              }
+          } else {
+              let lastEvent = overlappingEvents.last!
+              if (longestEvent.descriptor.dateInterval.intersects(event.descriptor.dateInterval) && (longestEvent.descriptor.dateInterval.end != event.descriptor.dateInterval.start || style.eventGap <= 0.0)) ||
+                  (lastEvent.descriptor.dateInterval.intersects(event.descriptor.dateInterval) && (lastEvent.descriptor.dateInterval.end != event.descriptor.dateInterval.start || style.eventGap <= 0.0)) {
+                  overlappingEvents.append(event)
+                  continue
+              }
+          }
+          groupsOfEvents.append(overlappingEvents)
+          overlappingEvents = [event]
+      }
+
+      groupsOfEvents.append(overlappingEvents)
+      overlappingEvents.removeAll()
+
+      var slottedEvents = [EventLayoutAttributes:Int]()
+
+      for overlappingEvents in groupsOfEvents {
+        var division = 1
+        for event in overlappingEvents {
+          let localDivision = overlappingEvents.filter({ ($0.descriptor.dateInterval.contains(event.descriptor.dateInterval.start) ||
+             $0.descriptor.dateInterval.start == event.descriptor.dateInterval.start)
+           }).count
+           division = max(division, localDivision)
         }
 
-        var groupsOfEvents = [[EventLayoutAttributes]]()
-        var overlappingEvents = [EventLayoutAttributes]()
+        for event in overlappingEvents {
+         if (alreadySlotted(event: event, slottedEvents: slottedEvents)) {
+           continue
+         }
+         let eventOverlappingWithCurrentEvent: Array<EventLayoutAttributes> = overlappingEvents.filter({event.descriptor.dateInterval.overlaps(with: $0.descriptor.dateInterval)})
+         let takenSlots = slottedEvents.filter {eventOverlappingWithCurrentEvent.contains($0.key)}.values.sorted()
+         let firstAvailableSlot = Array(0...division-1).first(where: {!takenSlots.contains($0)}) ?? 0
+         slottedEvents[event] = firstAvailableSlot
 
-        for event in sortedEvents {
-            if overlappingEvents.isEmpty {
-                overlappingEvents.append(event)
-                continue
-            }
-
-            let longestEvent = overlappingEvents.sorted { (attr1, attr2) -> Bool in
-                var period = attr1.descriptor.dateInterval
-                let period1 = period.end.timeIntervalSince(period.start)
-                period = attr2.descriptor.dateInterval
-                let period2 = period.end.timeIntervalSince(period.start)
-
-                return period1 > period2
-            }
-                .first!
-
-            if style.eventsWillOverlap {
-                guard let earliestEvent = overlappingEvents.first?.descriptor.dateInterval.start else { continue }
-                let dateInterval = getDateInterval(date: earliestEvent)
-                if event.descriptor.dateInterval.contains(dateInterval.start) {
-                    overlappingEvents.append(event)
-                    continue
-                }
-            } else {
-                let lastEvent = overlappingEvents.last!
-                if (longestEvent.descriptor.dateInterval.intersects(event.descriptor.dateInterval) && (longestEvent.descriptor.dateInterval.end != event.descriptor.dateInterval.start || style.eventGap <= 0.0)) ||
-                    (lastEvent.descriptor.dateInterval.intersects(event.descriptor.dateInterval) && (lastEvent.descriptor.dateInterval.end != event.descriptor.dateInterval.start || style.eventGap <= 0.0)) {
-                    overlappingEvents.append(event)
-                    continue
-                }
-            }
-            groupsOfEvents.append(overlappingEvents)
-            overlappingEvents = [event]
+         let totalCount = CGFloat(division)
+         let startY = dateToY(event.descriptor.dateInterval.start)
+         let endY = dateToY(event.descriptor.dateInterval.end)
+         let floatIndex = CGFloat(firstAvailableSlot)
+         let x = style.leadingInset + floatIndex / totalCount * calendarWidth
+         let equalWidth = calendarWidth / totalCount
+         event.frame = CGRect(x: x, y: startY, width: equalWidth, height: endY - startY)
         }
+      }
+  }
 
-        groupsOfEvents.append(overlappingEvents)
-        overlappingEvents.removeAll()
-
-        for overlappingEvents in groupsOfEvents {
-            let totalCount = Double(overlappingEvents.count)
-            for (index, event) in overlappingEvents.enumerated() {
-                let startY = dateToY(event.descriptor.dateInterval.start)
-                let endY = dateToY(event.descriptor.dateInterval.end)
-                let floatIndex = Double(index)
-                let x = style.leadingInset + floatIndex / totalCount * calendarWidth
-                let equalWidth = calendarWidth / totalCount
-                event.frame = CGRect(x: x, y: startY, width: equalWidth, height: endY - startY)
-            }
-        }
-    }
+  private func alreadySlotted(event: EventLayoutAttributes, slottedEvents: [EventLayoutAttributes:Int]) -> Bool {
+    return slottedEvents[event] != nil
+  }
 
     private func prepareEventViews() {
         pool.enqueue(views: eventViews)
@@ -570,4 +592,51 @@ public final class TimelineView: UIView {
         let endRange = calendar.date(byAdding: .minute, value: splitMinuteInterval, to: beginningRange)!
         return DateInterval(start: beginningRange, end: endRange)
     }
+}
+
+extension EventLayoutAttributes: Hashable {
+   public func hash(into hasher: inout Hasher) {
+     hasher.combine(ObjectIdentifier(self.descriptor))
+   }
+
+   public static func == (lhs: EventLayoutAttributes, rhs: EventLayoutAttributes) -> Bool {
+     return lhs.descriptor === rhs.descriptor
+   }
+ }
+
+extension DateInterval {
+   func contains(_ date: Date) -> Bool {
+     return self.start.isEarlier(than: date) && self.end.isLater(than: date)
+   }
+
+  func overlaps(with interval: DateInterval) -> Bool {
+    if (interval.start.isEarlier(than: self.start) && interval.end.isLater(than: self.start)) {
+      return true
+    }
+    else if (interval.start.isLaterThanOrEqual(to: self.start) && interval.end.isEarlierThanOrEqual(to: self.end)){
+      return true
+    }
+    else if(interval.start.isEarlier(than: self.end) && interval.end.isLater(than: self.end)){
+      return true
+    }
+    return false
+  }
+}
+
+extension Date {
+  func isEarlier(than date: Date) -> Bool {
+    return self.compare(date) == .orderedAscending
+  }
+
+  func isEarlierThanOrEqual(to date: Date) -> Bool {
+    return self.compare(date) == .orderedAscending || self.compare(date) == .orderedSame
+  }
+
+  func isLaterThanOrEqual(to date: Date) -> Bool {
+    return self.compare(date) == .orderedDescending || self.compare(date) == .orderedSame
+  }
+
+  func isLater(than date: Date) -> Bool {
+    return self.compare(date) == .orderedDescending
+  }
 }
