@@ -438,7 +438,12 @@ public final class TimelineView: UIView {
       let sortedEvents = self.regularLayoutAttributes.sorted { (attr1, attr2) -> Bool in
           let start1 = attr1.descriptor.dateInterval.start
           let start2 = attr2.descriptor.dateInterval.start
-          return start1 < start2
+          if start1 != start2 {
+            return start1 < start2
+          }
+          let end1 = attr1.descriptor.dateInterval.end
+          let end2 = attr2.descriptor.dateInterval.end
+          return end1 < end2
       }
 
       var groupsOfEvents = [[EventLayoutAttributes]]()
